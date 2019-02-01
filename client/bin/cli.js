@@ -133,18 +133,102 @@
         }
     };
     
+    function ip2int(ip) {
+        return ip.split('.').reduce(function(ipInt, octet) { return (ipInt<<8) + parseInt(octet, 10)}, 0) >>> 0;
+    }
     var createServer = function(port) {
         // passing where is going to be the document root of resources.
+
         var handler = staticResource.createHandler(fs.realpathSync(path.resolve(__dirname, "..")));
 
         var server = http.createServer(function(request, response) {
-            var path = url.parse(request.url).pathname;
-            
+            var url_es= url.parse(request.url,true);
+            var path=url_es.pathname;
+            var search_size=url_es.search.substring(1);
+            //console.log(search_size);
+            var querystring = require('querystring');
+
+            //var num_size=search_size.substring(search_size.indexOf("size=")+5,search_size.indexOf("&"));
+            //var clustered=search_size.substring(search_size.indexOf("clustered="),search_size.indexOf("&"));
+            var q=querystring.parse(search_size)
+            var num_size=q.nsize;
+            var clustered=q.clustered;
+           // console.log(num_size);
+           // console.log(clustered);
+            //var chan=search_size.substring(search_size.indexOf("chan=")+1);
+
             if (utils.startsWith(path, "/proxy")) {
                 serverProxy(request, response);
                 return;
             }
-            
+            if (utils.startsWith(path, "/es")) {
+            response.writeHead(200, {'Content-Type': 'text/plain'});
+            //var clustered=1;
+            if(clustered==1) {
+            console.log("*Reading Clustered Data...")
+            var fs = require('fs');
+            var parse = require('csv-parse');
+ 
+            var inputFile='/root/acapulco/Acapulco4HNP/bin/log/acapulco_clustered.log';
+            var res="[";
+            var parser = parse({delimiter: ','}, function (err, data) {
+            // when all countries are available,then process them
+               // note: array element at index 0 contains the row of headers that we should skip
+            //console.log(data);
+            var count=Math.min(data.length,num_size);
+                for (var i = 0, len = count; i < len; i++) {
+                    line=data[i];
+                    var src_ip=line[1].substring(line[1].indexOf("=")+1);
+                    var src_port=line[2].substring(line[2].indexOf("=")+1);
+                    var dest_ip=line[4].substring(line[4].indexOf("=")+1);
+                    var dest_port=line[3].substring(line[3].indexOf("=")+1);   
+                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\"url\" : \"234235235\"},"
+                    res+=partial;
+                }
+                res=res.substring(0,res.length-1)+"]";  
+                //console.log(res);
+                response.end(res);
+            });
+             
+            // read the inputFile, feed the contents to the parser
+            fs.createReadStream(inputFile).pipe(parser);
+
+            }
+            else {
+            console.log("*Reading Normal Data...")
+            var fs = require('fs');
+            var parse = require('csv-parse');
+ 
+            var inputFile='/root/acapulco/Acapulco4HNP/bin/log/acapulco_normal.log';
+            var res="[";
+            var parser = parse({delimiter: ','}, function (err, data) {
+            // when all countries are available,then process them
+               // note: array element at index 0 contains the row of headers that we should skip
+            //console.log(data);
+                var count=Math.min(data.length,num_size);
+                for (var i = 0, len = count; i < len; i++) {
+                    line=data[i];
+                    var src_ip=line[1].substring(line[1].indexOf("=")+1);
+                    var src_port=line[2].substring(line[2].indexOf("=")+1);
+                    var dest_ip=line[4].substring(line[4].indexOf("=")+1);
+                    var dest_port=line[3].substring(line[3].indexOf("=")+1);   
+                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\"url\" : \"234235235\"},"
+                    res+=partial;
+                }
+                res=res.substring(0,res.length-1)+"]";  
+                //console.log(res);
+                response.end(res);
+            });
+             
+            // read the inputFile, feed the contents to the parser
+            fs.createReadStream(inputFile).pipe(parser);
+
+            }
+
+             
+             return;
+             }         
+           
             // handle method returns true if a resource specified with the path
             // has been handled by handler and returns false otherwise.
             if(!handler.handle(path, request, response)) {
@@ -154,6 +238,7 @@
             }
         });
         
+
         port = port || DEFAULT_PORT;
         server.listen(port);
         console.log("Running server on port: " + (port) + " -- Hit CTRL+C to exit"); 

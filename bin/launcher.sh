@@ -10,8 +10,11 @@
 SPLUNK_HOME=/Applications/splunk
 APP_BIN_DIR=$SPLUNK_HOME/etc/apps/Acapulco4HNP/bin
 APP_LOCAL_DIR=$SPLUNK_HOME/etc/apps/Acapulco4HNP/local
-SCRIPT=$APP_BIN_DIR/spl_feed2file.py
-PIDFILE=$APP_BIN_DIR/spl_feed2file.py.pid
+#SCRIPT=$APP_BIN_DIR/spl_feed2file.py
+#PIDFILE=$APP_BIN_DIR/spl_feed2file.py.pid
+SCRIPT=$APP_BIN_DIR/sissden.py
+PIDFILE=$APP_BIN_DIR/sissden.py.pid
+
 CONFIG_FILE=hpfeeds.conf
 CONF_MODTIME_FILE=$APP_BIN_DIR/.config
 

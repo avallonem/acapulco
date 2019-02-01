@@ -53,9 +53,10 @@ buttons displayed in the web client.
 */
 function showClusters() {
   if (d3.selectAll("circle")[0].length == 0){
-    if (clusterDensity == 0){
+    /*if (clusterDensity == 0){
       clusterDensity = readClustersDensity(data)
-    }
+    }*/
+    console.log(clusterDensity);
     drawClusters();
   } 
   d3.selectAll("circle").style("display", null);
@@ -149,27 +150,16 @@ function clean(){
 //Build an adequate JSON object from the data received from
 //Splunk and calls the drawing functions.
 function parse(results,mode){
-    events = results;
-    var rows = results.rows.slice();
-    var fields = results.fields.slice();
-    jd = "[";
-    for(var i = 0; i < rows.length; i++){
-      var row = rows[i];
-      var e = "{";
-      for(var j = 1; j < 6; j++){
-        e += "\"" + fields[j] + "\": " + row[j] + ", ";
-      }
-      e = e.substring(0,e.length - 2) + "}, ";
-      jd += e;
-    }
-    jd = jd.substring(0,jd.length - 2) + "]";  
-    data = jQuery.parseJSON(jd);
-    // console.log(data);
-    console.log("splunk data received!");
+    data = jQuery.parseJSON(results);
     draw(data);
     //if data is not clustered mode=1
     //and clusters are not shown 
-    clusterDensity=mode;
+    if(mode!=1){
+
+      clusterDensity=readClustersDensity(data);
+      console.log("Density");
+      console.log(clusterDensity);
+      }
 };
 
 //Build histograms of the different clusters when
@@ -231,6 +221,13 @@ function drawClusters(){
           .style("opacity", "1");})
         .on("mouseout", function(){d3.select(this)
           .style("opacity", "0.5");})
+        /*.on("click", function () {
+             $.get("/cl?key="+key"&label="label, function(data){
+
+             console.log(data);
+              
+          });
+        })*/
         .transition()
         .delay(100)
         .duration(1000)    

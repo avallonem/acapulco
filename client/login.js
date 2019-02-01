@@ -80,6 +80,9 @@ is correct, display info messages and the button to
 retrieve data from the Splunk instance.
 */
 function login(){
+  //MOD
+/*  console.log("Error in logging in");
+
 	service = new splunkjs.Service(http, { 
 		scheme: scheme,
 		host: host,
@@ -97,13 +100,13 @@ function login(){
         done(err || "Login failed");
         return;
     }
-    else{
+    else{*/ 
       console.log("logged correctly!");
       $("#ko-login").css("display", "none");
       $("#acapulco-run").css("display", "block");
       $("#ok-login").css("display", "block");
-    }      
- })
+/*    }      
+ })*/
 };
 
 /*
@@ -113,38 +116,42 @@ the Splunk server. If the data is corrrectly received
 it passed to the corresponding parser to be processed.
 */
 function getData(){
+    //MOD
+    //
     $("#zero-data").css("display", "none");
-    $("#ok-login").css("display", "none");
+   //MOD $("#ok-login").css("display", "none");
     $("#draw-data").css("display", "none");
     $("#done-data").css("display", "none");
     var query;
     var mode=0;
+    var clustered=0;
     var size = sld.n_value;
     if (size > 0){
       $("#get-data").css("display", "block");
       if ($("#normal-data").attr("checked") == "checked"){
-        query = "" +
-        'search index=acapulco_normal sourcetype=acapulco_normal | head '+size+' | fields chan,saddr,sport,dport,daddr,url,hash';
+        clustered=0;
         mode=1;
-      }
+       }
       else{
-        query = "" +
-        'search index=acapulco sourcetype=acapulco | head '+size+' | fields chan,saddr,sport,dport,daddr,url,hash';
+       clustered=1;
       }
-      service.oneshotSearch(query, {count: 0}, function(err, results) {
-        console.log(results);
-        if (err) {
-          console.log(err);
-          alert("An error occurred with the search");
-          return;
-        }
-        $("#get-data").css("display", "none");
-        $("#draw-data").css("display", "block");
-        parse(results,mode);
-      })
+           $.get("/es?nsize="+size+"&clustered="+clustered+"&", function(data){
+                    
+              $("#get-data").css("display", "none");
+              $("#draw-data").css("display", "block");
+             
+              
+              console.log(data);
+              parse(data,mode);
+          });
+
+      
     }
     else{
       $("#zero-data").css("display", "block");
     }
 };
  
+  function ip2int(ip) {
+    return ip.split('.').reduce(function(ipInt, octet) { return (ipInt<<8) + parseInt(octet, 10)}, 0) >>> 0;
+}
