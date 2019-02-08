@@ -35,19 +35,13 @@ In order to run all the elements, you'll need to install:
 
 The cluster runner script can be run periodically from the command line:
 
-	Usage: runner_mod_an.py [options] <log dir>
+	Usage: runner.py [options] <log dir>
 
-	Options:  
-	-h, --help            show this help message and exit  
-	-o OUTPUT_TYPE, --output=OUTPUT_TYPE  
-	                     Output type: csv or json (default csv)  
-	-d OUTPUT_DIR, --outdir=OUTPUT_DIR  
-	                     Output directory (default log dir)  
-	Usage: runner.py [options] <log dir> 
+	
 
 Once you run it, you can expect and output similar to this:
 
-	 $> python runner_mod_an.py 
+	 $> python runner.py <log_dir>
 
 	 [*] Writing output...  
 	 [*] Clustering saddr...  
@@ -57,15 +51,11 @@ Once you run it, you can expect and output similar to this:
 	 [*] Clustering url...  
 	 [*] Writing output...  
 
-Files "acapulco.log" and "acapulco_plain.log" will be created in the logging directory. You can add the following line to your crontab to run the script every day and have the data updated for new events.
-
-> 0 0 * * *  /bin/python  [...]/client/runner.py >> /var/log/acapulco_runner.log
+Files "acapulco_normal.log" and "acapulco_clustered.log" will be created in the logging directory. Y
 
 ### The D3 client
 
 The visualization client allows to create parallel coordinate graphs from plain meta-events or their clustered version. You can use the slider selector to indicate the number of events that be retrieved from ElasticSearch to build the graph. The d3.js library and the javascript engine of the browser will become slower as you request more data. Currently, the maximum is set to a safe top of 10000 events but I am actively thinking of ways to solve this.
-
-The first think you need to do is log in the Splunk server with your user and password and a new button will appear if the logging has been successful.
 
 If clustered data is selected and retrieved, the controls buttons allow to show the density of the different clusters.
 
