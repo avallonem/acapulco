@@ -182,7 +182,8 @@
                     var src_port=line[2].substring(line[2].indexOf("=")+1);
                     var dest_ip=line[4].substring(line[4].indexOf("=")+1);
                     var dest_port=line[3].substring(line[3].indexOf("=")+1);   
-                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\"url\" : \"234235235\"},"
+                    var time=line[0];
+                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\""+"time\" : \""+time+"\"},"
                     res+=partial;
                 }
                 res=res.substring(0,res.length-1)+"]";  
@@ -212,7 +213,8 @@
                     var src_port=line[2].substring(line[2].indexOf("=")+1);
                     var dest_ip=line[4].substring(line[4].indexOf("=")+1);
                     var dest_port=line[3].substring(line[3].indexOf("=")+1);   
-                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\"url\" : \"234235235\"},"
+                    var time=line[0];
+                    var partial="{\""+"src_ip\" : \""+src_ip+"\",\""+"src_port\" : \""+ src_port+"\",\""+"dest_ip\" : \""+dest_ip+"\",\""+"dest_port\" : \""+dest_port+"\",\""+"time\" : \""+time+"\"},"
                     res+=partial;
                 }
                 res=res.substring(0,res.length-1)+"]";  
