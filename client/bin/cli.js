@@ -168,7 +168,6 @@
             console.log("*Reading Clustered Data...")
             var fs = require('fs');
             var parse = require('csv-parse');
- 
             var inputFile='/root/acapulco/Acapulco4HNP/bin/log/acapulco_clustered.log';
             var res="[";
             var parser = parse({delimiter: ','}, function (err, data) {

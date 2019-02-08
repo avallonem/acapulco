@@ -41,6 +41,8 @@ import numpy as np
 from scipy.spatial import distance
 from sklearn import cluster
 from iptools import dottedQuadToNum
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 
 #keys that are extracted from the selected hpfeeds log files
 KEYS = ["time","chan","saddr","sport","dport","daddr","url","hash"]
@@ -50,7 +52,7 @@ KEYS_2_CLS = ["saddr","sport","dport","daddr","url"]
 #k-means is selected as the clustering algorithms.
 NUM_CLUSTERS = [10,10,10,10,10]
 
-def run(log_dir,o_type,o_dir):
+def run():
     """ Read hpfeeds log files from the log directory configured in
     Splunk and call the adequate function for each type of file in order
     to build one unique type of event (meta-event).
@@ -71,69 +73,50 @@ def run(log_dir,o_type,o_dir):
     """
 
     events = []
-    for f in os.listdir(log_dir):
-        if f.endswith(".log"):
-            if f == "dionaea.capture.log":
-                events += dionaea_capture(open(os.path.join(log_dir, f),'r'))
-                print "[*] Processing {0}...".format(f)
-            elif f == "dionaea.dcerpcrequests.log": 
-                events += dionaea_dcerpcrequests(open(os.path.join(log_dir, f),'r'))
-                print "[*] Processing {0}...".format(f)
-            elif f == "dionaea.capture.anon.log":
-                events += dionaea_capture_anon(open(os.path.join(log_dir, f),'r'))
-                print "[*] Processing {0}...".format(f)
-            elif f == "thug.files.log":
-                events += thug_files(open(os.path.join(log_dir, f),'r'))
-                print "[*] Processing {0}...".format(f)
-            # elif f == "Glastopf.events.in.log":
-            #     events += glastopf_events_in(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "cuckoo.analysis.log":
-            #     events += cuckoo_analysis(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "mwbinary.dionaea.sensorunique.log":
-            #     events += mwbinary_dionaea_sensorunique(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "dionaea.shellcodeprofiles.log":
-            #     events += dionaea_shellcodeprofiles(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "test.feed.log":
-            #     events += test_feed(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "glastopf.events.anon.log":
-            #     events += glastopf_events_anon(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "thug.events.log":
-            #     events += thug.events(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "glastopf.files.log":
-            #     events += glastopf_files(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "dionaea.capture.in.log":
-            #     events += dionaea_capture_in(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "glastopf.sandbox.log":
-            #     events += glastopf_sandbox(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
-            # elif f == "tip.log":      
-            #    events += tip_log(open(os.path.join(log_dir, f),'r'))
-            #     print "[*] Processing {0}...".format(f)
+   
+    es = Elasticsearch(
+            ['index.eval.sissden.eu:443'],
+                http_auth="",
+                    use_ssl=True,
+                        verify_certs=False,
+                        )
 
+    s = Search(index='cowrie-*', using=es).sort('-@timestamp')
+    s= s[0:10000]
+    hits=s.execute()
+    for hit in hits:
+        print(hit.endTime,hit.src_ip, hit.src_port, hit.dest_ip, hit.dest_port)
+        d={}
+        d["chan"]="cowrie"
+        d["time"]=hit.endTime
+        d["saddr"]=hit.src_ip
+        d["sport"]=hit.src_port
+        d["daddr"]=hit.dest_ip
+        d["dport"]=hit.dest_port
+        d["hash"]="h"
+        d["url"]="u"
+        events.append(d)
+   
+    
 
 
     #format data for d3 representation
     events_normal = encode_d3(list(events))
 
+
     #save the original list of events
-    save(events_normal,o_dir,o_type,"acapulco_normal")
+    save(events_normal,sys.argv[1],"csv","acapulco_normal")
+
 
     #compute clusters
     events_cls = cluster_events(list(events))
+    for i in events_cls:
+        print(i)
 
     #save the clustered list of events
-    save(events_cls,o_dir,o_type,"acapulco")
+    save(events_cls,sys.argv[1],"csv","acapulco_clustered")
 
-    return 0
+
 
 
 def save(events,o_dir,o_type,fname):
@@ -198,8 +181,8 @@ def cluster_events(events_cls,keys=KEYS_2_CLS,n_clusters=NUM_CLUSTERS):
         value_vector_d, vector_a = encode(events_cls,k)
         
         # 2 algorithms can be used: k-means or DBSCAN
-        # vector_label_d = cluster_kmeans(vector_a,num_cls_d[k])
-        vector_label_d = cluster_dbscan(vector_a)
+        vector_label_d = cluster_kmeans(vector_a,num_cls_d[k])
+        #vector_label_d = cluster_dbscan(vector_a)
 
         #create a dict of original values and their cluster labels
         for e in events_cls:
@@ -210,115 +193,7 @@ def cluster_events(events_cls,keys=KEYS_2_CLS,n_clusters=NUM_CLUSTERS):
 
     return events_cls
   
-def dionaea_capture(file):
-    """ Read a dionaea_capture hpfeeds log file
-    and create a list of meta-events according to a previous
-    extraction definition.
 
-    Args:
-        file: file descriptor of a hpfeed log file.
-
-    Returns:
-        A list of meta-events (dictionaries).
-    """
-    data = file.read()
-    dict_list = []
-    r = "^(.*) PUBLISH chan=(.*), identifier=(.*), url=(.*), daddr=(.*), saddr=(.*), dport=(.*), sport=(.*), sha512=(.*), md5=(.*)"
-    events = []
-    #this loop could be possible changed by lambda+map func
-    for l in data.split("\n"):
-        e = re.findall(r,l)
-        if len(e) > 0:
-            events += e
-    #it is necessary to sort values for each event in each channel
-    for e in events:
-        values = [e[0],e[1],e[5],e[7],e[6],e[4],e[3],e[9]]
-        dict_list.append(dict(zip(KEYS,values)))
-    return dict_list
-
-def dionaea_dcerpcrequests(file):
-    """ Read a dionaea_dcerpcrequests hpfeeds log file
-    and create a list of meta-events according to a previous
-    extraction definition.
-
-    Args:
-        file: file descriptor of a hpfeed log file.
-
-    Returns:
-        A list of meta-events (dictionaries).
-    """ 
-    data = file.read()
-    dict_list = []
-    r = "^(.*) PUBLISH chan=(.*), identifier=(.*), uuid=(.*), daddr=(.*), opnum=(.*), saddr=(.*), dport=(.*), sport=(.*)"
-    events = []
-    for l in data.split("\n"):
-        e = re.findall(r,l)
-        if len(e) > 0:
-            events += e
-    for e in events:
-        values = [e[0],e[1],e[6],e[8],e[7],e[4],e[3],"0"]
-        dict_list.append(dict(zip(KEYS,values)))
-    return dict_list
-
-def dionaea_capture_anon(file):
-    """ Read a dionaea_capture_anon hpfeeds log file
-    and create a list of meta-events according to a previous
-    extraction definition.
-
-    Args:
-        file: file descriptor of a hpfeed log file.
-
-    Returns:
-        A list of meta-events (dictionaries).
-    """ 
-    data = file.read()
-    dict_list = []
-    r = "^(.*) PUBLISH chan=(.*), identifier=(.*), script=(.*), type=(.*), id=(.*) server=(.*)"
-    events = []
-    for l in data.split("\n"):
-        e = re.findall(r,l)
-        if len(e) > 0:
-            events += e
-    for e in events:
-        values = [e[0],e[1],e[5],"80","0","0.0.0.0",e[3],"0"]
-        dict_list.append(dict(zip(KEYS,values)))
-    return dict_list
-
-def thug_files(file):
-    """ Read a thug_files hpfeeds log file
-    and create a list of meta-events according to a previous
-    extraction definition.
-
-    Args:
-        file: file descriptor of a hpfeed log file.
-
-    Returns:
-        A list of meta-events (dictionaries).
-    """ 
-    data = file.read()
-    dict_list = []
-    r = "^(.*) PUBLISH chan=(.*), identifier=(.*), url=(.*), type=(.*), sha1=(.*), data=(.*), md5=(.*)"
-    events = []
-    for l in data.split("\n"):
-        e = re.findall(r,l)
-        if len(e) > 0:
-            events += e
-    for e in events:
-        values = [e[0],e[1],"0","80","0","0",e[3],e[7]]
-        dict_list.append(dict(zip(KEYS,values)))
-    return dict_list
-
-# def glastopf_events_in(file):
-# def cuckoo_analysis(file):
-# def mwbinary_dionaea_sensorunique(file):
-# def dionaea_shellcodeprofiles(file):
-# def test_feed(file):
-# def glastopf_events_anon(file):
-# def thug.events(file):
-# def glastopf_files(file):
-# def dionaea_capture_in(file):
-# def glastopf_sandbox(file):
-# def tip_log(file):
 
 
 def cluster_dbscan(vector_a):
@@ -614,8 +489,9 @@ def csv_formatter(events):
         out_t += out
     return out_t
 
-
+'''
 def opts():
+
     usage = "usage: %prog [options] <log dir>"
     parser = optparse.OptionParser(usage)
     parser.add_option("-o", "--output", dest="output_type",
@@ -638,10 +514,10 @@ def opts():
         options.output_dir = log_dir
     
     return options, log_dir
-
+'''
 if __name__ == '__main__':
-    options, log_dir  = opts()
+   # options, log_dir  = opts()
     try:
-        sys.exit(run(log_dir,options.output_type,options.output_dir))
+        sys.exit(run())
     except KeyboardInterrupt:
         sys.exit(0)
