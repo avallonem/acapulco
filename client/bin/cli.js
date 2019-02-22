@@ -144,15 +144,7 @@
         var server = http.createServer(function(request, response) {
             var url_es= url.parse(request.url,true);
             var path=url_es.pathname;
-            var search_size=url_es.search.substring(1);
-            //console.log(search_size);
-            var querystring = require('querystring');
-
-            //var num_size=search_size.substring(search_size.indexOf("size=")+5,search_size.indexOf("&"));
-            //var clustered=search_size.substring(search_size.indexOf("clustered="),search_size.indexOf("&"));
-            var q=querystring.parse(search_size)
-            var num_size=q.nsize;
-            var clustered=q.clustered;
+            
            // console.log(num_size);
            // console.log(clustered);
             //var chan=search_size.substring(search_size.indexOf("chan=")+1);
@@ -164,11 +156,24 @@
             if (utils.startsWith(path, "/es")) {
             response.writeHead(200, {'Content-Type': 'text/plain'});
             //var clustered=1;
+            var fs = require('fs');
+            var realfilepath=fs.realpathSync("../bin/log");
+            //console.log(realfilepath);
+            var search_size=url_es.search.substring(1);
+            //console.log(search_size);
+            var querystring = require('querystring');
+
+            //var num_size=search_size.substring(search_size.indexOf("size=")+5,search_size.indexOf("&"));
+            //var clustered=search_size.substring(search_size.indexOf("clustered="),search_size.indexOf("&"));
+            var q=querystring.parse(search_size)
+            var num_size=q.nsize;
+            var clustered=q.clustered;
             if(clustered==1) {
             console.log("*Reading Clustered Data...")
-            var fs = require('fs');
+            
             var parse = require('csv-parse');
-            var inputFile='/root/acapulco/Acapulco4HNP/bin/log/acapulco_clustered.log';
+            
+            var inputFile=realfilepath+"/acapulco_clustered.log";
             var res="[";
             var parser = parse({delimiter: ','}, function (err, data) {
             // when all countries are available,then process them
@@ -198,8 +203,10 @@
             console.log("*Reading Normal Data...")
             var fs = require('fs');
             var parse = require('csv-parse');
- 
-            var inputFile='/root/acapulco/Acapulco4HNP/bin/log/acapulco_normal.log';
+            
+            
+            var inputFile=realfilepath+'/acapulco_normal.log';
+            console.log(inputFile);
             var res="[";
             var parser = parse({delimiter: ','}, function (err, data) {
             // when all countries are available,then process them
